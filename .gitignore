@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+new_train_hcast.sh
+output/
+captions/imagenetF_caps.txt

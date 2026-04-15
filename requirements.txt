@@ -1,0 +1,7 @@
+timm==0.4.12
+numpy==1.26.4
+lumo==0.2.0
+opencv-python==4.9.0.80
+opencv-contrib-python==4.9.0.80
+clip
+packaging
