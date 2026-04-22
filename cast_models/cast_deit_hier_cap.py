@@ -99,7 +99,7 @@ class CAST(VisionTransformer):
         self.blocks4, self.pool4 = blocks[3], pools[3]
         # --------------------------------------------------------------------------
         self.feat_dim = 64
-        self.feats_layer = nn.Linear(self.embed_dim*self.feat_dim, 512) #nn.Linear(self.embed_dim, 512) # 196, 64, 32, 16
+        self.feats_layer = nn.Linear(self.embed_dim*self.feat_dim, 512) 
         self.feats_layer.apply(self._init_weights)
 
     def _block_operations(self, x, cls_token, x_pad_mask,
@@ -128,7 +128,7 @@ class CAST(VisionTransformer):
         return (x, cls_token, pool_logit, centroid,
                 pool_pad_mask, pool_inds, out, feats)
 
-    def forward_features(self, x, y): # x: B x 3 x 224 x 224, y: B x 224 x 224
+    def forward_features(self, x, y):
         x = self.patch_embed(x) # NxHxWxC Bx28x28x384
         N, H, W, C = x.shape
         # Collect features within each segment
@@ -142,7 +142,7 @@ class CAST(VisionTransformer):
         x_padding_mask = avg_ones <= 0.5
 
         # Collect positional encodings within each segment
-        pos_embed = self.pos_embed[:, 1:].view(1, H, W, C).expand(N, -1, -1, -1) #Bx28x28x384 (B만큼 복사됨?)
+        pos_embed = self.pos_embed[:, 1:].view(1, H, W, C).expand(N, -1, -1, -1) 
         pos_embed = segment_mean_nd(pos_embed, y)  #Bx196x384
 
         # Add positional encodings
@@ -160,7 +160,7 @@ class CAST(VisionTransformer):
          pool_padding_mask1, pool_inds1, out1, _) = self._block_operations(
             x, cls_token, x_padding_mask,
             self.blocks1, self.pool1, None)
-        # cls_token1: Bx1x384, pool_padding_mask1: Bx64, centroid1: Bx64x384, out1: Bx384 logit: Bx194x64
+        #
         intermediates1 = {
             'logit1': pool_logit1, 'centroid1': centroid1, 'block1': block1,
             'padding_mask1': x_padding_mask, 'sampled_inds1': pool_inds1,

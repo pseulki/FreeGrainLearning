@@ -102,9 +102,9 @@ export PYTHONPATH=deit/dataset/:$PYTHONPATH
 ---
 
 ### ImageNet-F 
+We do not use ImageNet-pretrained model for ImageNet-F.
 
 #### Text-Attr (H-CAST)
-We do not use ImageNet-pretrained model for ImageNet-F.
 
 ```
 torchrun --nproc_per_node=4 deit/main_suppix_partial_cap.py \
@@ -120,9 +120,43 @@ torchrun --nproc_per_node=4 deit/main_suppix_partial_cap.py \
   --distributed 
 
 ```
+
+#### Text-Attr (H-ViT)
+```
+torchrun --nproc_per_node=4 deit/main_hier_partial.py \
+  --model deit_small_patch16_224 \
+  --batch-size 256 \
+  --epochs 200 \
+  --num_workers 8 \
+  --data-set IMNET-F \
+  --data-path /data/ImageNet \
+  --output_dir ./output/text_hvit \
+  --texts captions/imagenetF_caps.txt  --sim_loss_weight 1 \
+  --distributed 
+```
+
+#### Taxon-SSL + Text-Attr
+```
+python deit/main_taxon_ssl_texts.py \
+  --model deit_small_patch16_224 \
+  --batch-size 128 \
+  --epochs 200 \
+  --num_workers 8 \
+  --lr 0.001 \
+  --momentum 0.9 \
+  --weight-decay 0.0005 \
+  --data-set IMNET-F \
+  --data-path /data/ImageNet \
+  --output_dir ./output/taxon_ssl \
+  --texts captions/imagenetF_caps.txt  --text_loss_weight 1
+```
+
+
+
 ## 📊  Evaluation
 Not that captions are not used during inference time.
 
+#### Text-Attr (H-CAST)
 ```
 python deit/main_suppix_partial_cap.py \
   --model cast_small \
@@ -136,11 +170,13 @@ python deit/main_suppix_partial_cap.py \
 ```
 
 
+
 ## 🔗 Results and Checkpoints
 
 | Dataset    | Method              | FPA    | Model Checkpoint |
 |------------|---------------------|--------|------------------|
 | ImageNet-F | Text-Attr (H-CAST) | 63.20% | [Download](https://drive.google.com/file/d/1yHve-kFpp9_7HBSV-03s0T_UGkVr8EIo/view?usp=drive_link) |
+| ImageNet-F | Text-Attr (H-ViT) | 55.4% | [Download](https://drive.google.com/file/d/1BDZi07k6SyVI32Mu9gLX0D75bf82EoZ5/view?usp=share_link) |
 
 
 

@@ -14,57 +14,50 @@ from timm.utils import accuracy, ModelEma
 
 from losses import DistillationLoss
 import utils
-import csv
-import shutil
-from data.birds_get_tree_target_2 import *
 import json
-import torch.nn.functional as F
+import csv
+import numpy as np
+
 
 @torch.no_grad()
-def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='AIR-SUPERPIXEL', breeds_sort=None, out_embedding=False):
+def evaluate_detail(data_loader, model, device, filename, n_classes=3, dataset='AIR-HIER', texts=None, out_embedding=False):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
+
     if 'INAT21' in dataset:
-        inat_trees = json.load(open('data/inat21-F-tree.json'))  
+        inat_trees = json.load(open('data/inat21-F-tree.json')) 
+
     elif 'IMNET-F' in dataset:
         imnet_f_trees = json.load(open('data/imagenet-3L-tree.json'))
+
+
 
     # switch to evaluation mode
     model.eval()
     results = []
-    
     tice_cnt = 0
     fpa_cnt = 0
     total_cnt = 0
-    cum = 0
 
-    if out_embedding:
-        all_embeddings = []
-        all_middle_labels = []
-        all_fine_labels = []
-        all_coarse_labels = []
-
-    
     results.append(['basic_gt', 'basic_pred', 'sub_gt', 'sub_pred', 'fine_gt', 'fine_pred'])
-
-    for images, segments, target, sub_targets, basic_targets in metric_logger.log_every(data_loader, 1, header):
+    for images, target, sub_targets, basic_targets in metric_logger.log_every(data_loader, 10, header):
         images = images.to(device, non_blocking=True)
-        segments = segments.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
         sub_targets = sub_targets.to(device, non_blocking=True)
         basic_targets = basic_targets.to(device, non_blocking=True)
 
         # compute output
         with torch.cuda.amp.autocast():
-            output, sub_out, basic_out, embedding = model(images, segments)
+            output, sub_out, basic_out, *rest  = model(images)
+            
             loss_fine = criterion(output, target)
             loss_sub = criterion(sub_out, sub_targets)
             loss_basic = criterion(basic_out, basic_targets)
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        subord_acc1, subord_acc5 = accuracy(sub_out, sub_targets, topk=(1, 5))
+        sub_acc1, sub_acc5 = accuracy(sub_out, sub_targets, topk=(1, 5))
         basic_acc1, basic_acc5 = accuracy(basic_out, basic_targets, topk=(1, 5))
 
         batch_size = images.shape[0]
@@ -73,96 +66,63 @@ def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='A
         metric_logger.update(basicloss=loss_basic.item())
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-        metric_logger.meters['subord_acc1'].update(subord_acc1.item(), n=batch_size)
+        metric_logger.meters['sub_acc1'].update(sub_acc1.item(), n=batch_size)
         metric_logger.meters['basic_acc1'].update(basic_acc1.item(), n=batch_size)
-        
-        basic_probs = F.softmax(basic_out, dim=1)
-        subord_probs = F.softmax(sub_out, dim=1)
-        fine_probs = F.softmax(output, dim=1)
 
-        basic_conf, basic_pred = torch.max(basic_probs, 1)
-        subord_conf, subord_pred = torch.max(subord_probs, 1)
-        fine_conf, pred = torch.max(fine_probs, 1)
+        _, pred = torch.max(output, 1)
+        pred = pred.cpu().numpy()
+        target = target.cpu().numpy()
 
-        basic_pred = basic_pred.detach().cpu().numpy()
-        basic_conf = basic_conf.detach().cpu().numpy()
-        basic_targets = basic_targets.detach().cpu().numpy()
+        _, sub_pred = torch.max(sub_out, 1)
+        sub_pred = sub_pred.cpu().numpy()
+        sub_targets = sub_targets.cpu().numpy()
 
-        subord_pred = subord_pred.detach().cpu().numpy()
-        subord_conf = subord_conf.detach().cpu().numpy()
-        sub_targets = sub_targets.detach().cpu().numpy()
+        _, basic_pred = torch.max(basic_out, 1)
+        basic_pred = basic_pred.cpu().numpy()
+        basic_targets = basic_targets.cpu().numpy()
 
-        pred = pred.detach().cpu().numpy()
-        fine_conf = fine_conf.detach().cpu().numpy()
-        target = target.detach().cpu().numpy()
-
-
-        if out_embedding:
-            all_embeddings.append(embedding.cpu().numpy())  # [B, D]
-            all_middle_labels.extend(sub_targets)
-            all_fine_labels.extend(target)
-            all_coarse_labels.extend(basic_targets)
 
         total_cnt += batch_size
         for i in range(batch_size):
-            results.append([basic_targets[i], basic_pred[i], sub_targets[i], subord_pred[i], target[i], pred[i]])
-
-
-            if pred[i] == target[i] and subord_pred[i] == sub_targets[i] and basic_pred[i] == basic_targets[i]:
+            results.append([basic_targets[i], basic_pred[i], sub_targets[i], sub_pred[i], target[i], pred[i]])
+            tice_results = [pred[i]+1, sub_pred[i]+1, basic_pred[i]+1]
+            
+            if pred[i] == target[i] and sub_pred[i] == sub_targets[i] and basic_pred[i] == basic_targets[i]:
                 fpa_cnt += 1
 
             if 'AIR' in dataset:
-                tice_results = [pred[i]+1, subord_pred[i]+1, basic_pred[i]+1]
+                tice_results = [pred[i]+1, sub_pred[i]+1, basic_pred[i]+1]
                 if tice_results in air_trees:
                     tice_cnt += 1
             elif 'BIRD' in dataset:
-                tice_results = [pred[i]+1, basic_pred[i]+1, subord_pred[i]+1]
+                tice_results = [pred[i]+1, basic_pred[i]+1, sub_pred[i]+1]
                 if tice_results in birds_trees:
                     tice_cnt += 1
-            elif 'INAT18' in dataset:
-                tice_results = [pred[i], subord_pred[i], basic_pred[i]]
-                if tice_results in inat_trees:
-                    tice_cnt += 1
             elif 'INAT21' in dataset:
-                tice_results = [pred[i], subord_pred[i], basic_pred[i]]
+                tice_results = [pred[i], sub_pred[i], basic_pred[i]]
                 if tice_results in inat_trees:
                     tice_cnt += 1
             elif 'IMNET-F' in dataset:
-                tice_results = [pred[i], subord_pred[i], basic_pred[i]]
+                tice_results = [pred[i], sub_pred[i], basic_pred[i]]
                 if tice_results in imnet_f_trees:
                     tice_cnt += 1
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} subord@1 {subordtop1.global_avg:.3f}' 
+    print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} sub@1 {subtop1.global_avg:.3f}' 
         ' basic@1 {basictop1.global_avg:.3f} sploss {losses.global_avg:.3f} subordloss {subordlosses.global_avg:.3f} basicloss {basiclosses.global_avg:.3f}'
         .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.sploss, subordlosses=metric_logger.subordloss, basiclosses=metric_logger.basicloss,
-                subordtop1=metric_logger.subord_acc1, basictop1=metric_logger.basic_acc1))
-
-
+                subtop1=metric_logger.sub_acc1, basictop1=metric_logger.basic_acc1))
+    
     print(f"FPA: {(fpa_cnt / total_cnt) * 100:.3f}% | TICE: {((total_cnt - tice_cnt) / total_cnt) * 100:.3f}% ")
 
     with open(filename, 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=',')
         csvwriter.writerows(results)
         csvwriter.writerows(str(tice_cnt))
-
-    if out_embedding:
-        all_embeddings = np.concatenate(all_embeddings, axis=0)
-        all_middle_labels = np.array(all_middle_labels)
-        all_fine_labels = np.array(all_fine_labels)
-        all_coarse_labels = np.array(all_coarse_labels)
-        print('all_embeddings.shape', all_embeddings.shape)
-        
-        np.savez('hcast_text_cls_embeddings.npz',
-                 embeddings=all_embeddings,
-                 middle_labels=all_middle_labels,
-                 fine_labels=all_fine_labels,
-                 coarse_labels=all_coarse_labels)
-        print('saved embeddings to embeddings.npz')
     
+        
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-
 
 air_trees = [
 [1, 1, 1],
@@ -266,6 +226,7 @@ air_trees = [
 [99, 69, 29],
 [100, 70, 30]
 ]
+
 
 birds_trees = [
 [1,12,35],

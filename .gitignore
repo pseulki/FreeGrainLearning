@@ -210,3 +210,5 @@ __marimo__/
 new_train_hcast.sh
 output/
 captions/imagenetF_caps.txt
+logs/
+tmp/

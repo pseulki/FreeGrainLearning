@@ -19,7 +19,7 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-def truncate_text(hf_tokenizer, text, max_tokens=77):
+def truncate_text(hf_tokenizer, text, max_tokens=75):
     tokens = hf_tokenizer.tokenize(text) 
     truncated_tokens = tokens[:max_tokens-3]  
     cleaned_text = hf_tokenizer.convert_tokens_to_string(truncated_tokens)  
@@ -131,7 +131,13 @@ class ImageNetHier(Dataset):
             sample = Image.open(f).convert('RGB')
 
         if self.transform is not None:
-            sample = self.transform(sample)
+            if isinstance(self.transform, dict): # for CHMatch. 
+                sample = {
+                    name: tfm(sample.copy()) for name, tfm in self.transform.items()
+                }
+            else:
+                sample = self.transform(sample)
+
         
 
         
