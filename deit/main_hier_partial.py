@@ -161,13 +161,10 @@ def get_args_parser():
     # Dataset parameters
     parser.add_argument('--data-path', default='/datasets01/imagenet_full_size/061417/', type=str,
                         help='dataset path')
-    parser.add_argument('--data-set', default='IMNET-F', choices=['IMNET-F'],
+    parser.add_argument('--data-set', default='IMNET-F', choices=['IMNET-F', 'INAT21-MINI-HIER-CAP',
+                                                                  'AIR-HIER', 'BIRD-HIER', 'BIRD-REAL'],
                         type=str, help='Image Net dataset path')
-    parser.add_argument('--issource', action='store_false')
     parser.add_argument('--path-yn', action='store_true')
-    parser.add_argument('--inat-category', default='name',
-                        choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'],
-                        type=str, help='semantic granularity')
 
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
@@ -194,18 +191,12 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     
     parser.add_argument('--filename', default='reverse_best.csv', type=str)
-    parser.add_argument('--imb_type', default='exp', type=str, choices=['exp', 'bal'])
-    parser.add_argument('--img_max', default=None, type=int)
-    parser.add_argument('--sourcefile', default='_train_source.txt', type=str)
     parser.add_argument('--random_seed', default=1, type=int)
     parser.add_argument('--sim_loss_weight', default=1.0, type=float)
     parser.add_argument('--texts', default=None, type=str)
 
     parser.add_argument('--sp_proportion', default=0.25, type=float)
     parser.add_argument('--fm_proportion', default=0.25, type=float)
-    parser.add_argument('--rand_number', default=0, type=int)
-    parser.add_argument('--re_level', default='family', type=str, choices=['family', 'order', 'species'])
-    parser.add_argument('--out_embedding', action='store_true', default=False, help='output_embedding')
     
     
     return parser
@@ -449,7 +440,7 @@ def main(args):
                 loss_scaler.load_state_dict(checkpoint['scaler'])
         lr_scheduler.step(args.start_epoch)
     if args.eval:
-        test_stats = evaluate_detail(data_loader_val, model, device, args.filename, len(args.nb_classes), args.data_set, args.texts, args.out_embedding)
+        test_stats = evaluate_detail(data_loader_val, model, device, args.filename, len(args.nb_classes), args.data_set, args.texts)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         return
 
@@ -520,7 +511,7 @@ def main(args):
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
-    test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set, args.texts, args.out_embedding)
+    test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set, args.texts)
 
 
 

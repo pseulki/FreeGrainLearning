@@ -20,7 +20,7 @@ import numpy as np
 
 
 @torch.no_grad()
-def evaluate_detail(data_loader, model, device, filename, n_classes=3, dataset='AIR-HIER', texts=None, out_embedding=False):
+def evaluate_detail(data_loader, model, device, filename, n_classes=3, dataset='IMNET-F', texts=None):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")

@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -210,5 +213,7 @@ __marimo__/
 new_train_hcast.sh
 output/
 captions/imagenetF_caps.txt
+captions/inat21_caps.txt
+data/inat21-F-train.txt
 logs/
 tmp/

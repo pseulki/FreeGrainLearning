@@ -72,18 +72,15 @@ class HierVisionTransformer(VisionTransformer):
        
         return intermediates
 
-    def forward(self, x, out_embedding=False):
+    def forward(self, x):
         intermediates = self.forward_features(x)
-        if self.len_classes == 3: 
+        if self.len_classes == 3:
             out = self.norm(intermediates[4][:, 0])
             out = self.head(out)
             family_out = self.family_head(self.norm(intermediates[3][:, 0]))
             manu_out = self.manufacturer_head(self.norm(intermediates[2][:, 0]))
-            
-            if out_embedding:
-                return out, family_out, manu_out, intermediates[4][:, 0]
 
-            feats = intermediates[4][:, 1:]  
+            feats = intermediates[4][:, 1:]
 
             feats = self.feats_layer(feats.view(feats.size(0), -1))
 

@@ -21,7 +21,7 @@ import json
 import torch.nn.functional as F
 
 @torch.no_grad()
-def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='AIR-SUPERPIXEL', breeds_sort=None, out_embedding=False):
+def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='IMNET-F-SUPERPIXEL-CAP'):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -38,15 +38,7 @@ def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='A
     tice_cnt = 0
     fpa_cnt = 0
     total_cnt = 0
-    cum = 0
 
-    if out_embedding:
-        all_embeddings = []
-        all_middle_labels = []
-        all_fine_labels = []
-        all_coarse_labels = []
-
-    
     results.append(['basic_gt', 'basic_pred', 'sub_gt', 'sub_pred', 'fine_gt', 'fine_pred'])
 
     for images, segments, target, sub_targets, basic_targets in metric_logger.log_every(data_loader, 1, header):
@@ -58,7 +50,7 @@ def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='A
 
         # compute output
         with torch.cuda.amp.autocast():
-            output, sub_out, basic_out, embedding = model(images, segments)
+            output, sub_out, basic_out, _ = model(images, segments)
             loss_fine = criterion(output, target)
             loss_sub = criterion(sub_out, sub_targets)
             loss_basic = criterion(basic_out, basic_targets)
@@ -96,13 +88,6 @@ def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='A
         fine_conf = fine_conf.detach().cpu().numpy()
         target = target.detach().cpu().numpy()
 
-
-        if out_embedding:
-            all_embeddings.append(embedding.cpu().numpy())  # [B, D]
-            all_middle_labels.extend(sub_targets)
-            all_fine_labels.extend(target)
-            all_coarse_labels.extend(basic_targets)
-
         total_cnt += batch_size
         for i in range(batch_size):
             results.append([basic_targets[i], basic_pred[i], sub_targets[i], subord_pred[i], target[i], pred[i]])
@@ -118,10 +103,6 @@ def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='A
             elif 'BIRD' in dataset:
                 tice_results = [pred[i]+1, basic_pred[i]+1, subord_pred[i]+1]
                 if tice_results in birds_trees:
-                    tice_cnt += 1
-            elif 'INAT18' in dataset:
-                tice_results = [pred[i], subord_pred[i], basic_pred[i]]
-                if tice_results in inat_trees:
                     tice_cnt += 1
             elif 'INAT21' in dataset:
                 tice_results = [pred[i], subord_pred[i], basic_pred[i]]
@@ -147,20 +128,6 @@ def evaluate_detail(data_loader, model, device, filename, nb_classes, dataset='A
         csvwriter.writerows(results)
         csvwriter.writerows(str(tice_cnt))
 
-    if out_embedding:
-        all_embeddings = np.concatenate(all_embeddings, axis=0)
-        all_middle_labels = np.array(all_middle_labels)
-        all_fine_labels = np.array(all_fine_labels)
-        all_coarse_labels = np.array(all_coarse_labels)
-        print('all_embeddings.shape', all_embeddings.shape)
-        
-        np.savez('hcast_text_cls_embeddings.npz',
-                 embeddings=all_embeddings,
-                 middle_labels=all_middle_labels,
-                 fine_labels=all_fine_labels,
-                 coarse_labels=all_coarse_labels)
-        print('saved embeddings to embeddings.npz')
-    
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 

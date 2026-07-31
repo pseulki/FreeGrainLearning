@@ -164,12 +164,7 @@ def get_args_parser():
                         help='dataset path')
     parser.add_argument('--data-set', default='IMNET', choices=['IMNET-F'],
                         type=str, help='Image Net dataset path')
-    parser.add_argument('--breeds_sort', default='entity13', type=str, choices=['entity13', 'living17', 'nonliving26', 'entity30'])
-    parser.add_argument('--issource', action='store_false')
     parser.add_argument('--path-yn', action='store_true')
-    parser.add_argument('--inat-category', default='name',
-                        choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'],
-                        type=str, help='semantic granularity')
 
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
@@ -196,17 +191,12 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     
     parser.add_argument('--filename', default='reverse_best.csv', type=str)
-    parser.add_argument('--imb_type', default='exp', type=str, choices=['exp', 'bal'])
-    parser.add_argument('--img_max', default=None, type=int)
-    parser.add_argument('--sourcefile', default='_train_source.txt', type=str)
     parser.add_argument('--random_seed', default=1, type=int)
     parser.add_argument('--sim_loss_weight', default=1.0, type=float)
     parser.add_argument('--texts', default=None, type=str)
 
     parser.add_argument('--sp_proportion', default=0.25, type=float)
     parser.add_argument('--fm_proportion', default=0.25, type=float)
-    parser.add_argument('--rand_number', default=0, type=int)
-    parser.add_argument('--re_level', default='family', type=str, choices=['family', 'order', 'species'])
 
     # text loss
     parser.add_argument('--text_loss_weight', default=0.0, type=float)
@@ -645,7 +635,7 @@ def main(args):
 
     output_dir = Path(args.output_dir)
     if args.eval:
-        test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set, args.breeds_sort)
+        test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         test_log_stats = {
             # **{f'train_{k}': v for k, v in train_stats.items()}, # to be uncommented
@@ -724,7 +714,7 @@ def main(args):
                 f.write(json.dumps(train_log_stats) + "\n")
 
         if epoch % 10 == 0:
-            test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set, args.breeds_sort)
+            test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set)
 
             test_log_stats = {
                 # **{f'train_{k}': v for k, v in train_stats.items()}, # to be uncommented
@@ -742,7 +732,7 @@ def main(args):
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
-    test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set, args.breeds_sort)
+    test_stats = evaluate_detail(data_loader_val, model, device, os.path.join(args.output_dir, args.filename), len(args.nb_classes), args.data_set)
     test_log_stats = {
         # **{f'train_{k}': v for k, v in train_stats.items()}, # to be uncommented
         **{f'test_{k}': v for k, v in test_stats.items()},

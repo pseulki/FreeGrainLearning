@@ -1,5 +1,6 @@
 # Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
+"""Full-hierarchy datasets. Used to build the validation set for every method."""
 import os
 import json
 
@@ -13,19 +14,17 @@ import imagenet_f
 import imagenet_f_seeds_cap
 import imagenet_f_seeds
 
-# import aircraft_partial
-# import aircraft_partial_seeds
+import aircraft
+import aircraft_seeds
 
-# import birds
-# import birds_partial 
-# import birds_partial_seeds
+import birds
+import birds_seeds
 
-# import inat21_mini_seeds
-# import inat21_mini_seeds_cap
-# import inat21_mini_cap
+import birds_real
+import birds_real_seeds
 
-# import birds_real
-# import birds_real_seeds
+import inat21_mini
+import inat21_mini_seeds
 
 
 def build_dataset(is_train, args):
@@ -34,16 +33,16 @@ def build_dataset(is_train, args):
     if args.data_set == 'IMNET-F':
         nb_classes=[505, 127, 20]
         dataset = imagenet_f.ImageNetHier(
-                 args.data_path, 
+                 args.data_path,
                  is_train,
                  transform=transform,
                  texts=args.texts,
         )
-    
+
     elif args.data_set == 'IMNET-F-SUPERPIXEL':
         nb_classes=[505, 127, 20]
         dataset = imagenet_f_seeds.ImageNetHier(
-                 args.data_path, 
+                 args.data_path,
                  is_train,
                  transform=transform,
                  mean=IMAGENET_DEFAULT_MEAN,
@@ -53,12 +52,12 @@ def build_dataset(is_train, args):
                 blur_ops=None,
                 scale_factor=1.0,
         )
-    
+
 
     elif args.data_set == 'IMNET-F-SUPERPIXEL-CAP':
         nb_classes=[505, 127, 20]
         dataset = imagenet_f_seeds_cap.ImageNetHier( #_cap
-                 args.data_path, 
+                 args.data_path,
                  is_train,
                  transform=transform,
                  mean=IMAGENET_DEFAULT_MEAN,
@@ -73,7 +72,7 @@ def build_dataset(is_train, args):
 
 
     elif args.data_set == 'AIR-HIER':
-        dataset = aircraft_partial.FGVCAircraft_Hier(
+        dataset = aircraft.FGVCAircraft_Hier(
             args.data_path,
             is_train=is_train,
             transform=transform,
@@ -81,9 +80,9 @@ def build_dataset(is_train, args):
         nb_classes = [100, 70, 30]
 
     elif args.data_set == 'AIR-HIER-SUPERPIXEL':
-        root = os.path.join(args.data_path, 'train' if is_train else 'test')
         dataset = aircraft_seeds.FGVCAircraft(
             args.data_path,
+            is_train=is_train,
             transform=transform,
             mean=IMAGENET_DEFAULT_MEAN,
             std=IMAGENET_DEFAULT_STD,
@@ -91,127 +90,34 @@ def build_dataset(is_train, args):
             compactness=10.0,
             blur_ops=None,
             scale_factor=1.0,
-            is_train=is_train,
         )
         nb_classes = [100, 70, 30]
 
 
-
- 
-    elif args.data_set == 'BIRD-SYN':
+    elif args.data_set == 'BIRD-HIER':
         root = os.path.join(args.data_path, 'train' if is_train else 'test')
         dataset = birds.ImageFolder(
             root,
             transform=transform,
-            is_hier=True,
-            random_seed=args.random_seed,
-            is_train=is_train,
-            texts=args.texts,
         )
         nb_classes = [200, 38, 13]
-    
 
-    elif args.data_set == 'BIRD':
+    elif args.data_set == 'BIRD-HIER-SUPERPIXEL':
         root = os.path.join(args.data_path, 'train' if is_train else 'test')
-        dataset = birds_partial.ImageFolder(
+        dataset = birds_seeds.ImageFolder(
             root,
             transform=transform,
-            is_hier=False,
-            category = args.category,
-            is_train = is_train,
-            texts=args.texts,
-        )
-        if args.category == 'name':
-            nb_classes = 200
-        elif args.category == 'family':
-            nb_classes = 38
-        elif args.category == 'order':
-            nb_classes = 13
-    
-            
-    elif args.data_set == 'BIRD-SYN-SUPERPIXEL':
-        root = os.path.join(args.data_path, 'train' if is_train else 'test')
-        dataset = birds_partial_seeds.ImageFolder(
-            root,
-            transform=transform,
-            is_hier=True,
             mean=IMAGENET_DEFAULT_MEAN,
             std=IMAGENET_DEFAULT_STD,
             n_segments=args.num_superpixels,
             compactness=10.0,
             blur_ops=None,
             scale_factor=1.0,
-            random_number=args.seed,
-            is_train=is_train,
-            texts=args.texts,
         )
         nb_classes = [200, 38, 13]
 
-    
 
-
-    elif args.data_set == 'INAT21-MINI-HIER':
-        dataset = inat21_mini.iNat21MiniDataset(
-            args.data_path,
-            transform=transform,
-            is_hier=True,
-            is_train=is_train,
-        )
-        nb_classes = [10000, 1103, 273]
-
-    elif args.data_set == 'INAT21-MINI-HIER-SUPERPIXEL':
-        dataset = inat21_mini_seeds.iNat21MiniDataset(
-            args.data_path,
-            is_train=is_train,
-            transform=transform,
-            is_hier=True,
-            mean=[0.466, 0.471, 0.380],
-            std=[0.195, 0.194, 0.192],
-            n_segments=args.num_superpixels,
-            compactness=10.0,
-            blur_ops=None,
-            scale_factor=1.0,
-        )
-        nb_classes = [10000, 1103, 273]
-
-    elif args.data_set == 'INAT21-MINI-HIER-SUPERPIXEL-CAP':
-        dataset = inat21_mini_seeds_cap.iNat21MiniDataset(
-            args.data_path,
-            is_train=is_train,
-            transform=transform,
-            is_hier=True,
-            mean=[0.466, 0.471, 0.380],
-            std=[0.195, 0.194, 0.192],
-            n_segments=args.num_superpixels,
-            compactness=10.0,
-            blur_ops=None,
-            scale_factor=1.0,
-        )
-        nb_classes = [10000, 1103, 273]
-    elif args.data_set == 'INAT21-MINI-HIER-CAP':
-        dataset = inat21_mini_cap.iNat21MiniDataset(
-            args.data_path,
-            is_train=is_train,
-            transform=transform,
-            is_hier=True,
-            texts=args.texts,
-        )
-        nb_classes = [10000, 1103, 273]
-
-    
-    elif args.data_set == 'INAT18-HIER':
-        dataset = inat.iNatHierDataset(
-            args.data_path,
-            is_train=is_train,
-            transform=transform,
-            is_hier=True,
-        )
-        nb_classes = [8142, 274, 14] # To-do: fix -> 272
-
-  
-    
-
-    elif args.data_set == 'BIRD-F':
+    elif args.data_set == 'BIRD-REAL':
         dataset = birds_real.BirdRealDataset(
             args.data_path,
             transform=transform,
@@ -219,8 +125,8 @@ def build_dataset(is_train, args):
             texts=args.texts,
         )
         nb_classes = [200, 38, 13]
-    
-    elif args.data_set == 'BIRD-F-SUPERPIXEL':
+
+    elif args.data_set == 'BIRD-REAL-SUPERPIXEL':
         dataset = birds_real_seeds.BirdRealDataset(
             args.data_path,
             transform=transform,
@@ -235,6 +141,29 @@ def build_dataset(is_train, args):
             path_yn=args.path_yn,
         )
         nb_classes = [200, 38, 13]
+
+
+    elif args.data_set == 'INAT21-MINI-HIER-CAP':
+        dataset = inat21_mini.iNat21MiniDataset(
+            args.data_path,
+            is_train=is_train,
+            transform=transform,
+        )
+        nb_classes = [10000, 1103, 273]
+
+    elif args.data_set == 'INAT21-MINI-HIER-SUPERPIXEL-CAP':
+        dataset = inat21_mini_seeds.iNat21MiniDataset(
+            args.data_path,
+            is_train=is_train,
+            transform=transform,
+            mean=[0.466, 0.471, 0.380],
+            std=[0.195, 0.194, 0.192],
+            n_segments=args.num_superpixels,
+            compactness=10.0,
+            blur_ops=None,
+            scale_factor=1.0,
+        )
+        nb_classes = [10000, 1103, 273]
 
 
     return dataset, nb_classes
