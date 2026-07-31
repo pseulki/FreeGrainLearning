@@ -156,7 +156,7 @@ Create a conda environment with the following command:
 
   | Captions | Datasets | Link |
   |----------|----------|------|
-  | `imagenetF_caps.txt` | ImageNet-F | [Download](https://drive.google.com/file/d/1yHve-kFpp9_7HBSV-03s0T_UGkVr8EIo/view?usp=sharing) |
+  | `imagenetF_caps.txt` | ImageNet-F | [Download](https://drive.google.com/file/d/1ZhBgau_BPVUkfDEoNL57mA-tfPJpmr4J/view?usp=sharing) |
   | `inat21_caps.txt` | iNat21-F | [Download](https://drive.google.com/file/d/1KwQRN8lXJpxoKU8zyIAcXDX2cGWxFtua/view?usp=sharing) |
 
 ```
@@ -415,8 +415,8 @@ Per-image predictions are written to `<output_dir>/<--filename>`, and FPA / TICE
 
 | Dataset    | Method              | FPA    | Model Checkpoint |
 |------------|---------------------|--------|------------------|
-| ImageNet-F | Text-Attr (H-CAST) | 63.20% | [Download](https://drive.google.com/file/d/1yHve-kFpp9_7HBSV-03s0T_UGkVr8EIo/view?usp=drive_link) |
-| ImageNet-F | Text-Attr (H-ViT) | 55.4% | [Download](https://drive.google.com/file/d/1BDZi07k6SyVI32Mu9gLX0D75bf82EoZ5/view?usp=share_link) |
+| ImageNet-F | Text-Attr (H-CAST) | 63.20% | [Download](https://drive.google.com/file/d/1yHve-kFpp9_7HBSV-03s0T_UGkVr8EIo/view?usp=sharing) |
+| ImageNet-F | Text-Attr (H-ViT) | 55.4% | [Download](https://drive.google.com/file/d/1BDZi07k6SyVI32Mu9gLX0D75bf82EoZ5/view?usp=sharing) |
 
 Checkpoints for iNat21-F, Aircraft-F, CUB-F and CUB-Real are coming soon.
 
